@@ -13,7 +13,7 @@ if os.name != 'nt':
     print("КРИТИЧЕСКАЯ ОШИБКА: Неподдерживаемая ОС (Только Windows).")
     sys.exit(1)
 
-BOT_TOKEN = "8644292894:AAHprQKa9xO39SB9t9eSZWq9LuxWk_Ta548"
+BOT_TOKEN =  "8320512407:AAF8XKfXkVYUTP7x_FHHMo1oAK_CkFr95VM"
 CHAT_ID = "8573437923"
 LAST_UPDATE_ID = 0
 unlock_ready = False
