@@ -1,4 +1,6 @@
 psutil
 requests
-pyinstaller
+nuitka
+zstandard
+ordered-set
 
