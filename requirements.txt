@@ -1,6 +1,5 @@
 psutil
 requests
-nuitka
-zstandard
-ordered-set
-
+pyinstaller
+opencv-python
+numpy
