@@ -3,3 +3,4 @@ requests
 pyinstaller
 opencv-python
 numpy
+miniupnpc
